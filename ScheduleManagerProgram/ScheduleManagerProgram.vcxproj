@@ -123,15 +123,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="login_logic.c" />
+    <ClCompile Include="login_loop.c" />
+    <ClCompile Include="login_ui.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="set_mode.c" />
     <ClCompile Include="ui_core.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="app_scene.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="login_logic.h" />
+    <ClInclude Include="login_loop.h" />
+    <ClInclude Include="login_ui.h" />
     <ClInclude Include="set_mode.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="ui_core.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="memo.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

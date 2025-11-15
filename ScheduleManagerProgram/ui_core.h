@@ -22,9 +22,18 @@ typedef struct {
     wchar_t     key;    // 키보드일 때만 의미 (예: L'\n', L'1')
 } UiInputEvent;
 
-void Ui_InitConsole(void);
+typedef struct
+{
+    int x;
+    int y;
+    int w;
+    int h;
+} UiRect;
+
+int Ui_PointInRect(const UiRect* r, int x, int y);
+void Ui_InitConsole();
 //void Ui_ClearScreen(void);
-void DrawBox(int width, int height);
+void draw_box(int x, int y, int width, int height);
 void set_cursor_visibility(int isVisible);
 void goto_xy(int x, int y);
 // 여기서 윈도우 콘솔 이벤트를 읽어오는 공통 함수

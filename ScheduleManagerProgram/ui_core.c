@@ -1,3 +1,4 @@
+#include "common.h"
 #include "ui_core.h"
 
 static HANDLE hConsole;
@@ -7,6 +8,8 @@ void Ui_InitConsole(void)
 {
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     hInput = GetStdHandle(STD_INPUT_HANDLE);
+
+    SetConsoleMode(hInput, ENABLE_EXTENDED_FLAGS | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT);
 }
 
 int Ui_WaitInput(UiInputEvent* out)
@@ -45,36 +48,32 @@ int Ui_WaitInput(UiInputEvent* out)
 }
 
 
-void DrawBox(int width, int height)
+void draw_box(int x, int y, int width, int height)
 {
-    int i, y;
-
     if (width < 2 || height < 2) {
-        return; // 최소 크기 체크
+        return;    // 최소 크기 체크
     }
 
-    // 윗줄 ┌──────┐
+    goto_xy(x, y);
     wprintf(L"┌");
-    for (i = 0; i < width - 2; i++) {
+    for (int i = 0; i < width - 2; i++)
         wprintf(L"─");
-    }
-    wprintf(L"┐\n");
+    wprintf(L"┐");
 
-    // 가운데 줄들 │      │
-    for (y = 0; y < height - 2; y++) {
+    for (int i = 1; i < height - 1; i++)
+    {
+        goto_xy(x, y + i);
         wprintf(L"│");
-        for (i = 0; i < width - 2; i++) {
-            wprintf(L" ");
-        }
-        wprintf(L"│\n");
+
+        goto_xy(x + width - 1, y + i);
+        wprintf(L"│");
     }
 
-    // 아랫줄 └──────┘
+    goto_xy(x, y + height - 1);
     wprintf(L"└");
-    for (i = 0; i < width - 2; i++) {
+    for (int i = 0; i < width - 2; i++)
         wprintf(L"─");
-    }
-    wprintf(L"┘\n");
+    wprintf(L"┘");
 }
 
 void set_cursor_visibility(int isVisible)
@@ -96,4 +95,10 @@ void goto_xy(int x, int y)
         DWORD err = GetLastError();
         wprintf(L"[goto_xy 실패] x=%d, y=%d, error=%lu\n", x, y, err);
     }
+}
+
+int Ui_PointInRect(const UiRect* r, int x, int y)
+{
+    return (x >= r->x && x < r->x + r->w &&
+        y >= r->y && y < r->y + r->h);
 }

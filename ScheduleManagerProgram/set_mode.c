@@ -1,6 +1,5 @@
 #include "common.h"
-
-static HANDLE hConsole;
+#include "ui_core.h"
 
 void set_console()
 {
@@ -8,12 +7,16 @@ void set_console()
 	(void)_setmode(_fileno(stdin), _O_U16TEXT);
 	(void)_setmode(_fileno(stderr), _O_U16TEXT);
 
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    Ui_InitConsole();
+    set_cursor_visibility(0);
+
     SetConsoleTitleA("Schedule Management Program");
 
     // 3) 원하는 크기
     SHORT width = 120;
     SHORT height = 30;
+
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
     // 먼저 버퍼 크기를 충분히 키워주고
     COORD size;
@@ -27,6 +30,7 @@ void set_console()
     rect.Top = 0;
     rect.Right = width - 1;
     rect.Bottom = height - 1;
+
 
     SetConsoleWindowInfo(hOut, TRUE, &rect);
 }
