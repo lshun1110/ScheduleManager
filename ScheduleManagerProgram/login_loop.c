@@ -5,6 +5,7 @@
 #include "login_logic.h"
 #include "login_loop.h"
 #include "signup.h"
+
 extern User g_current_user;
 
 SceneState Login_Loop(void)
@@ -12,7 +13,7 @@ SceneState Login_Loop(void)
     wchar_t id[32] = L"";
     wchar_t pw[32] = L"";
 
-    LoginField currentField = FIELD_ID;  // 처음에는 ID 칸
+    LoginField currentField = FIELD_LOGIN;  // 처음에는 ID 칸
     int        showPassword = 0;        // 0: * 표시, 1: 실제 비밀번호 표시
     int        lastLoginFailed = 0;
     DWORD      failTick = 0;            // 로그인 실패 시각(ms)
@@ -44,7 +45,7 @@ SceneState Login_Loop(void)
         {
             int focus_is_id = (currentField == FIELD_ID);
             // LoginUi_Draw 안이 알아서 화면 지우기 + 그리기까지 처리한다고 가정
-            LoginUi_Draw(id, pw, focus_is_id, showPassword, lastLoginFailed);
+            LoginUi_Draw(id, pw, currentField, showPassword, lastLoginFailed);
         }
         else // LOGIN_VIEW_SIGNUP
         {

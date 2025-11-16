@@ -12,4 +12,4 @@
 #include <conio.h>
 #include "struct.h"
 
-#endif // COMMON_H
+#endif
