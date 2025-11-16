@@ -1,6 +1,5 @@
 #include "common.h"
 #include "app_scene.h"
-#include "struct.h"
 #include "ui_core.h"
 #include "login_ui.h"
 #include "login_logic.h"
@@ -8,21 +7,15 @@
 
 extern User g_current_user;
 
-// 0: ID, 1: PW, 2: [로그인], 3: [view]
-#define FIELD_ID    0
-#define FIELD_PW    1
-#define FIELD_LOGIN 2
-#define FIELD_VIEW  3
-
 SceneState Login_Loop(void)
 {
     wchar_t id[32] = L"";
     wchar_t pw[32] = L"";
 
-    int   currentField = FIELD_ID;
-    int   showPassword = 0;
-    int   lastLoginFailed = 0;
-    DWORD failTick = 0;   // 실패 메시지 출력 시작 시각(ms)
+    LoginField currentField = FIELD_ID;  // 처음에는 ID 칸
+    int        showPassword = 0;        // 0: * 표시, 1: 실제 비밀번호 표시
+    int        lastLoginFailed = 0;
+    DWORD      failTick = 0;            // 로그인 실패 시각(ms)
 
     UiInputEvent ev;
 
@@ -39,30 +32,31 @@ SceneState Login_Loop(void)
         if (lastLoginFailed)
         {
             DWORD now = GetTickCount();
-            if (now - failTick >= 5000)   // 5000ms = 5초
+            if (now - failTick >= 3000)   // 5000ms = 5초
             {
                 lastLoginFailed = 0;
             }
         }
 
         // 2) 화면 그리기
-        //    focus_is_id는 나중에 UI에서 시각적으로 ID/PW 강조에 쓸 수 있음
+        //    currentField 자체를 넘겨도 되지만,
+        //    login_ui는 지금 ID 여부만 쓰니까 일단 ID 여부만 전달
         int focus_is_id = (currentField == FIELD_ID);
         LoginUi_Draw(id, pw, focus_is_id, showPassword, lastLoginFailed);
 
-        // 3) 커서 위치/표시 (ID/PW일 때만 커서 보이게)
+        // 3) 커서 위치/표시 (ID/PW일 때만 보이게)
         if (currentField == FIELD_ID)
         {
             size_t len = wcslen(id);
-            if (len > 21) len = 21;              // 박스 내부 폭 21칸
-            goto_xy(82 + (int)len, 15);          // ID 텍스트 시작 (82,15)
+            if (len > 21) len = 21;          // ID 텍스트 폭 21칸
+            goto_xy(82 + (int)len, 15);      // ID 텍스트 시작 (82,15)
             set_cursor_visibility(1);
         }
         else if (currentField == FIELD_PW)
         {
             size_t len = wcslen(pw);
-            if (len > 21) len = 21;
-            goto_xy(82 + (int)len, 18);          // PW 텍스트 시작 (82,18)
+            if (len > 21) len = 21;          // PW 텍스트 폭 21칸
+            goto_xy(82 + (int)len, 18);      // PW 텍스트 시작 (82,18)
             set_cursor_visibility(1);
         }
         else
@@ -81,11 +75,11 @@ SceneState Login_Loop(void)
 
             if (Ui_PointInRect(&rect_id_box, mx, my))
             {
-                currentField = FIELD_ID;      // ID 칸으로 포커스
+                currentField = FIELD_ID;      // ID 칸으로 포커스 이동
             }
             else if (Ui_PointInRect(&rect_pw_box, mx, my))
             {
-                currentField = FIELD_PW;      // PW 칸으로 포커스
+                currentField = FIELD_PW;      // PW 칸으로 포커스 이동
             }
             else if (Ui_PointInRect(&rect_btn_login, mx, my))
             {
@@ -93,12 +87,12 @@ SceneState Login_Loop(void)
                 if (Login_Auth(id, pw, &g_current_user))
                 {
                     set_cursor_visibility(0);
-                    return SCENE_CALENDAR;
+                    return SCENE_EXIT;
                 }
                 else
                 {
                     lastLoginFailed = 1;
-                    failTick = GetTickCount();   // 실패 시각 저장
+                    failTick = GetTickCount();   // 실패 시각 기록
                     currentField = FIELD_ID;
                 }
             }
@@ -112,7 +106,7 @@ SceneState Login_Loop(void)
                 showPassword = !showPassword;
             }
 
-            // 마우스 처리 후 다음 루프로 넘어가서 새 상태 기준으로 다시 그림
+            // 마우스 입력 처리 후, 다음 루프에서 새 상태로 다시 그림
             continue;
         }
 
@@ -121,44 +115,10 @@ SceneState Login_Loop(void)
         {
             wchar_t ch = ev.key;
 
-            // ESC → 프로그램 종료
-            if (ch == 27)
-            {
-                set_cursor_visibility(0);
-                return SCENE_EXIT;
-            }
-
-            // ENTER
-            if (ch == L'\r')
-            {
-                if (currentField == FIELD_LOGIN)
-                {
-                    if (Login_Auth(id, pw, &g_current_user))
-                    {
-                        set_cursor_visibility(0);
-                        return SCENE_CALENDAR;
-                    }
-                    else
-                    {
-                        lastLoginFailed = 1;
-                        failTick = GetTickCount();
-                        currentField = FIELD_ID;
-                    }
-                }
-                else if (currentField == FIELD_VIEW)
-                {
-                    showPassword = !showPassword;
-                }
-                else
-                {
-                    // ID / PW 칸에서는 ENTER → 다음 필드로 이동
-                    currentField = (currentField + 1) % 4;
-                }
-            }
             // TAB → 다음 필드
-            else if (ch == L'\t')
+            if (ch == L'\t')
             {
-                currentField = (currentField + 1) % 4;
+                currentField = (LoginField)(((int)currentField + 1) % FIELD_COUNT);
             }
             // BACKSPACE → 현재 텍스트 필드에서 한 글자 삭제
             else if (ch == L'\b')

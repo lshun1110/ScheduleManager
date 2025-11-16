@@ -13,14 +13,13 @@ int main()
     set_console();
 
     SceneState scene = SCENE_LOGIN;
-    int running = 1;
     
     while (running)
     {
         switch (scene)
         {
         case SCENE_LOGIN:
-            scene = Login_Loop();   // <— Login 모듈로 위임
+            scene = Login_Loop();
             break;
 
         case SCENE_CALENDAR:
@@ -30,7 +29,11 @@ int main()
         case SCENE_EXIT:
             running = 0;
             break;
+        default:
+            running = 0;
+            break;
         }
+        
     }
 
     return 0;

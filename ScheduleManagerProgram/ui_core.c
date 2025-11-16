@@ -50,6 +50,7 @@ int Ui_WaitInput(UiInputEvent* out)
 
 void draw_box(int x, int y, int width, int height)
 {
+    set_cursor_visibility(0);
     if (width < 2 || height < 2) {
         return;    // 최소 크기 체크
     }
