@@ -128,6 +128,7 @@
     <ClCompile Include="login_ui.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="set_mode.c" />
+    <ClCompile Include="signup_ui.c" />
     <ClCompile Include="ui_core.c" />
   </ItemGroup>
   <ItemGroup>
@@ -137,6 +138,7 @@
     <ClInclude Include="login_loop.h" />
     <ClInclude Include="login_ui.h" />
     <ClInclude Include="set_mode.h" />
+    <ClInclude Include="signup.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="ui_core.h" />
   </ItemGroup>

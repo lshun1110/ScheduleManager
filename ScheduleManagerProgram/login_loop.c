@@ -1,10 +1,10 @@
-#include "common.h"
+ï»¿#include "common.h"
 #include "app_scene.h"
 #include "ui_core.h"
 #include "login_ui.h"
 #include "login_logic.h"
 #include "login_loop.h"
-
+#include "signup.h"
 extern User g_current_user;
 
 SceneState Login_Loop(void)
@@ -12,161 +12,205 @@ SceneState Login_Loop(void)
     wchar_t id[32] = L"";
     wchar_t pw[32] = L"";
 
-    LoginField currentField = FIELD_ID;  // Ã³À½¿¡´Â ID Ä­
-    int        showPassword = 0;        // 0: * Ç¥½Ã, 1: ½ÇÁ¦ ºñ¹Ð¹øÈ£ Ç¥½Ã
+    LoginField currentField = FIELD_ID;  // ì²˜ìŒì—ëŠ” ID ì¹¸
+    int        showPassword = 0;        // 0: * í‘œì‹œ, 1: ì‹¤ì œ ë¹„ë°€ë²ˆí˜¸ í‘œì‹œ
     int        lastLoginFailed = 0;
-    DWORD      failTick = 0;            // ·Î±×ÀÎ ½ÇÆÐ ½Ã°¢(ms)
+    DWORD      failTick = 0;            // ë¡œê·¸ì¸ ì‹¤íŒ¨ ì‹œê°(ms)
 
     UiInputEvent ev;
+    LoginView view = LOGIN_VIEW_LOGIN;  // ì²˜ìŒì—ëŠ” ë¡œê·¸ì¸ í™”ë©´
 
-    // Å¬¸¯ ÆÇÁ¤¿ë ¿µ¿ªµé (ÁÂÇ¥´Â draw_login_screen ±âÁØ)
-    UiRect rect_id_box = (UiRect){ 80, 14, 25, 3 };  // ID ¹Ú½º
-    UiRect rect_pw_box = (UiRect){ 80, 17, 25, 3 };  // PW ¹Ú½º
-    UiRect rect_view_box = (UiRect){ 106, 18,  3, 1 };  // "[ ]" ºÎºÐ
-    UiRect rect_btn_login = (UiRect){ 88, 21, 11, 1 };  // "[ ·Î±×ÀÎ ]"
-    UiRect rect_btn_signup = (UiRect){ 87, 23, 13, 1 };  // "[ È¸¿ø°¡ÀÔ ]"
+    // í´ë¦­ íŒì •ìš© ì˜ì—­ë“¤ (ì¢Œí‘œëŠ” LoginUi_Draw ê¸°ì¤€)
+    UiRect rect_id_box = (UiRect){ 80, 14, 25, 3 };  // ID ë°•ìŠ¤
+    UiRect rect_pw_box = (UiRect){ 80, 17, 25, 3 };  // PW ë°•ìŠ¤
+    UiRect rect_view_box = (UiRect){ 106, 18, 3, 1 };  // "[ ]" ë¶€ë¶„
+    UiRect rect_btn_login = (UiRect){ 88, 21, 11, 1 };  // "[ ë¡œê·¸ì¸ ]"
+    UiRect rect_btn_signup = (UiRect){ 87, 23, 13, 1 };  // "[ íšŒì›ê°€ìž… ]"
 
     while (1)
     {
-        // 1) ½ÇÆÐ ¸Þ½ÃÁö 5ÃÊ À¯Áö ÈÄ ÀÚµ¿ Á¦°Å
+        // 1) ì‹¤íŒ¨ ë©”ì‹œì§€ 3ì´ˆ ìœ ì§€ í›„ ìžë™ ì œê±°
         if (lastLoginFailed)
         {
             DWORD now = GetTickCount();
-            if (now - failTick >= 3000)   // 5000ms = 5ÃÊ
+            if (now - failTick >= 3000)   // 3000ms = 3ì´ˆ
             {
                 lastLoginFailed = 0;
             }
         }
 
-        // 2) È­¸é ±×¸®±â
-        //    currentField ÀÚÃ¼¸¦ ³Ñ°Üµµ µÇÁö¸¸,
-        //    login_ui´Â Áö±Ý ID ¿©ºÎ¸¸ ¾²´Ï±î ÀÏ´Ü ID ¿©ºÎ¸¸ Àü´Þ
-        int focus_is_id = (currentField == FIELD_ID);
-        LoginUi_Draw(id, pw, focus_is_id, showPassword, lastLoginFailed);
-
-        // 3) Ä¿¼­ À§Ä¡/Ç¥½Ã (ID/PWÀÏ ¶§¸¸ º¸ÀÌ°Ô)
-        if (currentField == FIELD_ID)
+        // 2) í™”ë©´ ê·¸ë¦¬ê¸° (í•œ ë²ˆì— í•˜ë‚˜ë§Œ)
+        if (view == LOGIN_VIEW_LOGIN)
         {
-            size_t len = wcslen(id);
-            if (len > 21) len = 21;          // ID ÅØ½ºÆ® Æø 21Ä­
-            goto_xy(82 + (int)len, 15);      // ID ÅØ½ºÆ® ½ÃÀÛ (82,15)
-            set_cursor_visibility(1);
+            int focus_is_id = (currentField == FIELD_ID);
+            // LoginUi_Draw ì•ˆì´ ì•Œì•„ì„œ í™”ë©´ ì§€ìš°ê¸° + ê·¸ë¦¬ê¸°ê¹Œì§€ ì²˜ë¦¬í•œë‹¤ê³  ê°€ì •
+            LoginUi_Draw(id, pw, focus_is_id, showPassword, lastLoginFailed);
         }
-        else if (currentField == FIELD_PW)
+        else // LOGIN_VIEW_SIGNUP
         {
-            size_t len = wcslen(pw);
-            if (len > 21) len = 21;          // PW ÅØ½ºÆ® Æø 21Ä­
-            goto_xy(82 + (int)len, 18);      // PW ÅØ½ºÆ® ½ÃÀÛ (82,18)
-            set_cursor_visibility(1);
+            draw_signup_screen();
+        }
+
+        // 3) ì»¤ì„œ ìœ„ì¹˜/í‘œì‹œ (ë¡œê·¸ì¸ í™”ë©´ì—ì„œë§Œ)
+        if (view == LOGIN_VIEW_LOGIN)
+        {
+            if (currentField == FIELD_ID)
+            {
+                size_t len = wcslen(id);
+                if (len > 21) len = 21;          // ID í…ìŠ¤íŠ¸ í­ 21ì¹¸
+                goto_xy(82 + (int)len, 15);      // ID í…ìŠ¤íŠ¸ ì‹œìž‘ (82,15)
+                set_cursor_visibility(1);
+            }
+            else if (currentField == FIELD_PW)
+            {
+                size_t len = wcslen(pw);
+                if (len > 21) len = 21;          // PW í…ìŠ¤íŠ¸ í­ 21ì¹¸
+                goto_xy(82 + (int)len, 18);      // PW í…ìŠ¤íŠ¸ ì‹œìž‘ (82,18)
+                set_cursor_visibility(1);
+            }
+            else
+            {
+                set_cursor_visibility(0);
+            }
         }
         else
         {
             set_cursor_visibility(0);
         }
 
-        // 4) ÀÔ·Â ÇÏ³ª ´ë±â
+        // 4) ìž…ë ¥ í•˜ë‚˜ ëŒ€ê¸°
         Ui_WaitInput(&ev);
 
-        // 5) ¸¶¿ì½º ÀÔ·Â Ã³¸®
+        // 5) ë§ˆìš°ìŠ¤ ìž…ë ¥ ì²˜ë¦¬
         if (ev.type == UI_INPUT_MOUSE_LEFT)
         {
             int mx = ev.pos.x;
             int my = ev.pos.y;
 
-            if (Ui_PointInRect(&rect_id_box, mx, my))
+            if (view == LOGIN_VIEW_LOGIN)
             {
-                currentField = FIELD_ID;      // ID Ä­À¸·Î Æ÷Ä¿½º ÀÌµ¿
-            }
-            else if (Ui_PointInRect(&rect_pw_box, mx, my))
-            {
-                currentField = FIELD_PW;      // PW Ä­À¸·Î Æ÷Ä¿½º ÀÌµ¿
-            }
-            else if (Ui_PointInRect(&rect_btn_login, mx, my))
-            {
-                // ·Î±×ÀÎ ½Ãµµ
-                if (Login_Auth(id, pw, &g_current_user))
+                // --- ë¡œê·¸ì¸ í™”ë©´ì—ì„œì˜ í´ë¦­ ì²˜ë¦¬ ---
+                if (Ui_PointInRect(&rect_id_box, mx, my))
                 {
-                    set_cursor_visibility(0);
-                    return SCENE_EXIT;
+                    currentField = FIELD_ID;      // ID ì¹¸ìœ¼ë¡œ í¬ì»¤ìŠ¤ ì´ë™
                 }
-                else
+                else if (Ui_PointInRect(&rect_pw_box, mx, my))
                 {
-                    lastLoginFailed = 1;
-                    failTick = GetTickCount();   // ½ÇÆÐ ½Ã°¢ ±â·Ï
-                    currentField = FIELD_ID;
+                    currentField = FIELD_PW;      // PW ì¹¸ìœ¼ë¡œ í¬ì»¤ìŠ¤ ì´ë™
                 }
-            }
-            else if (Ui_PointInRect(&rect_btn_signup, mx, my))
-            {
-                // TODO: È¸¿ø°¡ÀÔ Scene »ý±â¸é ¿©±â¼­ Scene ÀüÈ¯
-            }
-            else if (Ui_PointInRect(&rect_view_box, mx, my))
-            {
-                currentField = FIELD_VIEW;
-                showPassword = !showPassword;
-            }
+                else if (Ui_PointInRect(&rect_btn_login, mx, my))
+                {
+                    // ë¡œê·¸ì¸ ì‹œë„
+                    if (Login_Auth(id, pw, &g_current_user))
+                    {
+                        set_cursor_visibility(0);
+                        // ë¡œê·¸ì¸ ì„±ê³µ â†’ ìº˜ë¦°ë” Sceneìœ¼ë¡œ
+                        return SCENE_CALENDAR;
+                    }
+                    else
+                    {
+                        lastLoginFailed = 1;
+                        failTick = GetTickCount();   // ì‹¤íŒ¨ ì‹œê° ê¸°ë¡
+                        currentField = FIELD_ID;
+                    }
+                }
+                else if (Ui_PointInRect(&rect_btn_signup, mx, my))
+                {
+                    // íšŒì›ê°€ìž… í™”ë©´ìœ¼ë¡œ ì „í™˜ (SceneStateëŠ” ê·¸ëŒ€ë¡œ ë¡œê·¸ì¸ Scene ìœ ì§€)
+                    view = LOGIN_VIEW_SIGNUP;
+                    currentField = FIELD_ID;  // ìž„ì‹œ
+                    continue;
+                }
+                else if (Ui_PointInRect(&rect_view_box, mx, my))
+                {
+                    currentField = FIELD_VIEW;
+                    showPassword = !showPassword;
+                }
 
-            // ¸¶¿ì½º ÀÔ·Â Ã³¸® ÈÄ, ´ÙÀ½ ·çÇÁ¿¡¼­ »õ »óÅÂ·Î ´Ù½Ã ±×¸²
-            continue;
+                continue;
+            }
+            else
+            {
+                // --- íšŒì›ê°€ìž… í™”ë©´ì—ì„œì˜ í´ë¦­ ì²˜ë¦¬ (ì¶”í›„ í™•ìž¥) ---
+                // ì˜ˆ: ë‚˜ì¤‘ì— "ë’¤ë¡œê°€ê¸°" ë²„íŠ¼ ë§Œë“¤ë©´ ì—¬ê¸°ì„œ view = LOGIN_VIEW_LOGIN; ì²˜ë¦¬
+                // ì§€ê¸ˆì€ ì•„ì§ UI/ë¡œì§ ë¯¸êµ¬í˜„ ìƒíƒœë¼ ìž…ë ¥ë§Œ ì†Œë¹„
+                continue;
+            }
         }
 
-        // 6) Å°º¸µå ÀÔ·Â Ã³¸®
+        // 6) í‚¤ë³´ë“œ ìž…ë ¥ ì²˜ë¦¬
         if (ev.type == UI_INPUT_KEY)
         {
             wchar_t ch = ev.key;
 
-            // TAB ¡æ ´ÙÀ½ ÇÊµå
-            if (ch == L'\t')
+            // ESC: ë¡œê·¸ì¸ ë£¨í”„ ìžì²´ ì¢…ë£Œ â†’ í”„ë¡œê·¸ëž¨ ì¢…ë£Œ
+            if (ch == 27)  // ESC
             {
-                currentField = (LoginField)(((int)currentField + 1) % FIELD_COUNT);
+                set_cursor_visibility(0);
+                return SCENE_EXIT;
             }
-            // BACKSPACE ¡æ ÇöÀç ÅØ½ºÆ® ÇÊµå¿¡¼­ ÇÑ ±ÛÀÚ »èÁ¦
-            else if (ch == L'\b')
-            {
-                if (currentField == FIELD_ID)
-                {
-                    size_t len = wcslen(id);
-                    if (len > 0) id[len - 1] = L'\0';
-                }
-                else if (currentField == FIELD_PW)
-                {
-                    size_t len = wcslen(pw);
-                    if (len > 0) pw[len - 1] = L'\0';
-                }
-            }
-            // SPACE
-            else if (ch == L' ')
-            {
-                if (currentField == FIELD_VIEW)
-                {
-                    showPassword = !showPassword;
-                }
-                else if (currentField == FIELD_ID || currentField == FIELD_PW)
-                {
-                    wchar_t* buf = (currentField == FIELD_ID) ? id : pw;
-                    size_t   len = wcslen(buf);
 
-                    if (len < 31)
+            // ë¡œê·¸ì¸ í™”ë©´ì—ì„œë§Œ ID/PW íŽ¸ì§‘
+            if (view == LOGIN_VIEW_LOGIN)
+            {
+                // TAB â†’ ë‹¤ìŒ í•„ë“œ
+                if (ch == L'\t')
+                {
+                    currentField = (LoginField)(((int)currentField + 1) % FIELD_COUNT);
+                }
+                // BACKSPACE â†’ í˜„ìž¬ í…ìŠ¤íŠ¸ í•„ë“œì—ì„œ í•œ ê¸€ìž ì‚­ì œ
+                else if (ch == L'\b')
+                {
+                    if (currentField == FIELD_ID)
                     {
-                        buf[len] = L' ';
-                        buf[len + 1] = L'\0';
+                        size_t len = wcslen(id);
+                        if (len > 0) id[len - 1] = L'\0';
+                    }
+                    else if (currentField == FIELD_PW)
+                    {
+                        size_t len = wcslen(pw);
+                        if (len > 0) pw[len - 1] = L'\0';
+                    }
+                }
+                // SPACE
+                else if (ch == L' ')
+                {
+                    if (currentField == FIELD_VIEW)
+                    {
+                        showPassword = !showPassword;
+                    }
+                    else if (currentField == FIELD_ID || currentField == FIELD_PW)
+                    {
+                        wchar_t* buf = (currentField == FIELD_ID) ? id : pw;
+                        size_t   len = wcslen(buf);
+
+                        if (len < 31)
+                        {
+                            buf[len] = L' ';
+                            buf[len + 1] = L'\0';
+                        }
+                    }
+                }
+                // ì¼ë°˜ ì¸ì‡„ ê°€ëŠ¥í•œ ë¬¸ìž
+                else if (iswprint(ch))
+                {
+                    if (currentField == FIELD_ID || currentField == FIELD_PW)
+                    {
+                        wchar_t* buf = (currentField == FIELD_ID) ? id : pw;
+                        size_t   len = wcslen(buf);
+
+                        if (len < 31)
+                        {
+                            buf[len] = ch;
+                            buf[len + 1] = L'\0';
+                        }
                     }
                 }
             }
-            // ÀÏ¹Ý ÀÎ¼â °¡´ÉÇÑ ¹®ÀÚ
-            else if (iswprint(ch))
+            else
             {
-                if (currentField == FIELD_ID || currentField == FIELD_PW)
-                {
-                    wchar_t* buf = (currentField == FIELD_ID) ? id : pw;
-                    size_t   len = wcslen(buf);
-
-                    if (len < 31)
-                    {
-                        buf[len] = ch;
-                        buf[len + 1] = L'\0';
-                    }
-                }
+                // íšŒì›ê°€ìž… í™”ë©´ì—ì„œì˜ í‚¤ë³´ë“œ ìž…ë ¥ì€ ë‚˜ì¤‘ì— ë³„ë„ë¡œ ì„¤ê³„
+                // (ì§€ê¸ˆì€ ESCë¡œë§Œ ë¹ ì ¸ë‚˜ê°€ê²Œ í•´ ë‘” ìƒíƒœ)
             }
         }
     }

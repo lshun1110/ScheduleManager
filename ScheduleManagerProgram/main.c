@@ -4,7 +4,6 @@
 #include "login_ui.h"
 #include "app_scene.h"
 
-SceneState current_scene = SCENE_LOGIN;
 User g_current_user; // 현재 로그인한 사용자
 int running = 1;
 

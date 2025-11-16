@@ -8,7 +8,6 @@ typedef enum
     SCENE_EXIT
 } SceneState;
 
-// 로그인 화면에서 포커스가 갈 수 있는 요소들
 typedef enum
 {
     FIELD_ID = 0,     // ID 입력 칸
@@ -17,5 +16,12 @@ typedef enum
     FIELD_VIEW,       // [ ] view 토글
     FIELD_COUNT       // 필드 개수 (순환용)
 } LoginField;
+
+// 로그인 루프 내부에서만 쓰는 화면 모드
+typedef enum
+{
+    LOGIN_VIEW_LOGIN = 0,   // 기본 로그인 화면
+    LOGIN_VIEW_SIGNUP       // 회원가입 화면 (UI는 나중에 구현)
+} LoginView;
 
 #endif
